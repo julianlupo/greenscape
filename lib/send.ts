@@ -20,14 +20,20 @@ import { logEvent } from "./events";
 import { formatCents } from "./utils";
 import type { ProposalRow } from "./types";
 
-const FROM = "Greenscape Pro <onboarding@resend.dev>";
-// Demo-mode safety: Resend's free tier without a verified domain only allows
-// sending to the account owner's own email. We honor that by always routing
-// to DEMO_INBOX, with the intended customer email surfaced in the subject and
-// a banner at the top of the body. Once a domain is verified at
-// resend.com/domains, set RESEND_DEMO_INBOX="" (empty) to deliver to the
-// real customer email instead.
-const DEMO_INBOX = process.env.RESEND_DEMO_INBOX ?? "julian@r3ply.ai";
+// Sending from the verified `proposals.r3ply.ai` domain. Display name is
+// "Greenscape Pro" (the brand the customer recognizes); the actual mailbox
+// is on r3ply.ai because that's the verified sending domain. For real
+// multi-tenant deployment we'd verify each client's own domain.
+const FROM = "Greenscape Pro <marcus@proposals.r3ply.ai>";
+
+// Always BCC the operator on every customer send — keeps an inbox-side audit
+// trail in addition to proposal_events. Set RESEND_BCC="" to disable.
+const BCC = process.env.RESEND_BCC ?? "julian@r3ply.ai";
+
+// Optional demo-routing override. If set, ALL email is rerouted to this
+// address (TO + BCC ignored), with the intended recipient surfaced in the
+// subject. Useful when running someone else's account through the demo.
+const DEMO_INBOX = process.env.RESEND_DEMO_INBOX ?? "";
 
 let _resend: Resend | null = null;
 function client(): Resend | null {
@@ -50,11 +56,7 @@ export async function sendProposalEmail(proposal: ProposalRow): Promise<void> {
     ? `[DEMO → would have sent to ${proposal.customer_email}] Your Greenscape Pro proposal — ${proposal.project_address}`
     : `Your Greenscape Pro proposal — ${proposal.project_address}`;
 
-  const demoBanner = isDemoRouted
-    ? `🎬 DEMO MODE — this email was rerouted to ${DEMO_INBOX} for safety. Intended recipient: ${proposal.customer_email}. (Resend free tier; verify a domain to deliver to real customers.)\n\n---\n\n`
-    : "";
-
-  const intro = `${demoBanner}Hi ${customerName},\n\nThanks for having us out. Your proposal is below.`;
+  const intro = `Hi ${customerName},\n\nThanks for having us out. Your proposal is below.`;
   const closing = proposal.stripe_payment_link
     ? `Ready to lock in your spot? The 50% deposit is **${deposit}** — secure deposit link: ${proposal.stripe_payment_link}\n\nOnce that's in, we get on the schedule.`
     : `I'll send the deposit link separately once it's ready.`;
@@ -96,6 +98,7 @@ export async function sendProposalEmail(proposal: ProposalRow): Promise<void> {
     const result = await resend.emails.send({
       from: FROM,
       to: [actualTo],
+      bcc: !isDemoRouted && BCC ? [BCC] : undefined,
       subject,
       html,
       text: fullMarkdown,
@@ -108,7 +111,9 @@ export async function sendProposalEmail(proposal: ProposalRow): Promise<void> {
     await logEvent(proposal.id, "email_mocked", {
       intended_to: proposal.customer_email,
       actual_to: actualTo,
+      bcc: !isDemoRouted && BCC ? BCC : null,
       demo_routed: isDemoRouted,
+      from: FROM,
       subject,
       resend_id: result.data?.id ?? null,
       has_payment_link: Boolean(proposal.stripe_payment_link),
