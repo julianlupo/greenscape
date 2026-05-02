@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { supabase } from "@/lib/supabase";
+import { rejectProposal } from "@/lib/approval";
+import { markSlackRejected } from "@/lib/slack";
 import { logEvent } from "@/lib/events";
-import type { ProposalRow } from "@/lib/types";
+import { PipelineError } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
 
@@ -10,7 +11,7 @@ const RejectSchema = z.object({ reason: z.string().max(2000).optional().default(
 
 /**
  * POST /api/proposals/[id]/reject
- * Marcus killed the draft. State guard: must be `pending_approval`.
+ * Web-side reject. Slack reject goes through /api/slack/interactive.
  */
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   let body: unknown = {};
@@ -24,30 +25,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Validation failed" }, { status: 400 });
   }
 
-  const sb = supabase();
-  const { data: row, error: fetchErr } = await sb
-    .from("proposals")
-    .select("status")
-    .eq("id", params.id)
-    .single();
-  if (fetchErr || !row) {
-    return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
+  try {
+    await rejectProposal(params.id, parsed.data.reason, { source: "web" });
+    try {
+      await markSlackRejected(params.id, "web");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await logEvent(params.id, "slack_failed", { stage: "rejected_update", message });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (err instanceof PipelineError) {
+      return NextResponse.json({ error: err.message }, { status: err.statusCode });
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-  if ((row as Pick<ProposalRow, "status">).status !== "pending_approval") {
-    return NextResponse.json(
-      { error: `Cannot reject: status is '${(row as Pick<ProposalRow, "status">).status}'` },
-      { status: 409 }
-    );
-  }
-
-  const rejectedAt = new Date().toISOString();
-  const { error } = await sb
-    .from("proposals")
-    .update({ status: "rejected", rejected_at: rejectedAt })
-    .eq("id", params.id);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-  await logEvent(params.id, "rejected", { reason: parsed.data.reason, rejected_at: rejectedAt });
-  return NextResponse.json({ ok: true });
 }

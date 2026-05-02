@@ -39,6 +39,7 @@ export interface ProposalRow {
   requires_render: boolean;
   stripe_payment_link: string | null;
   slack_message_ts: string | null;
+  slack_channel_id: string | null;
   approved_at: string | null;
   rejected_at: string | null;
   sent_at: string | null;
