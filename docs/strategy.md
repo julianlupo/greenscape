@@ -8,17 +8,19 @@
 
 **Purpose:** Compress the site-walk-to-proposal cycle from 6–9 days to under 24 hours.
 
-- Marcus drops messy site-walk notes into a web form (or, in v1.1, dictates via voice + Whisper transcription).
+- Marcus drops messy site-walk notes into a web form (v1.1: dictate via voice + Whisper).
 - Two Claude Sonnet 4.6 calls: structured scope extraction (Zod-validated, retry-on-malformed), then proposal drafting in Marcus's voice.
 - Deterministic line-item match against the pricing catalog — no LLM in the math path; server computes every total. The model literally cannot ship a wrong number to the customer.
 - Approval lands as an interactive Slack message with line items, total, deposit, confidence flag, and inline Approve/Reject buttons. Marcus never leaves Slack.
 - On approve: Stripe Payment Link for 50% deposit, real customer email via Resend (verified `proposals.r3ply.ai` sender), audit log of every state transition. Reject opens a "Re-analyze with Claude" follow-up.
 
-**What it replaces:** Marcus's nightly proposal-drafting sessions — the bottleneck he names directly: *"I am the bottleneck."*
+**What it replaces:** Marcus's nightly proposal-drafting sessions. From the call: *"Honestly? Me. I am the bottleneck. I have to touch every proposal. Nobody else knows how to do that."*
 
-**ROI:** 35–40% of qualified leads lost to faster competitors. $28K AOV × ~150 projects/yr × ~30% close-rate recapture = **~$1.1M/yr in won deals**. LLM cost: ~$0.04 per draft × ~150 drafts/yr = **~$6/yr**. ROI ratio: ~180,000×.
+**ROI math:** 35–40% of qualified leads lost to faster competitors. $28K AOV × ~150 projects/yr × ~30% close-rate recapture = **~$1.1M/yr in won deals**. **Site walks already close at 70%+** (vs ~20% on phone-only quotes) — the proposal IS the conversion event. Speeding it up is the single highest-leverage intervention in the business. Marcus's own field evidence: *"I have had customers apologize to me. They liked us better but they needed to move."*
 
-**Why #1:** The math dwarfs every other lever 3–to–1. Until this leak is plugged, every other improvement compounds on a broken funnel — including Agent #2, which would feed reactivated leads into the same slow proposal pipe.
+**Cost to operate:** ~$0.04 per draft × ~150/yr = **~$6/yr** in LLM cost. ROI ratio: ~180,000×.
+
+**Why #1:** The math dwarfs every other lever 3-to-1. Until this leak is plugged, every other improvement compounds on a broken funnel — including Agent #2, which would feed reactivated leads into the same slow proposal pipe.
 
 ---
 
@@ -32,11 +34,11 @@
 - A/B tests message angle (price-anchor / seasonal urgency / personal check-in) and learns what reactivates whom.
 - Re-close attribution back to original lead source for ROAS reporting.
 
-**What it replaces:** Brittany's sporadic, untargeted re-engagement blasts that *"do not feel personal."*
+**What it replaces:** Brittany's sporadic, untargeted re-engagement blasts. Marcus's own framing: *"When it feels like Marcus is reaching out personally, people respond. When it feels like a mass blast, they do not."*
 
 **ROI:** 1,400 leads × 2% re-close × $28K AOV = **~$784K/yr in latent revenue**. Marcus has personally confirmed personal-feeling messages convert; the constraint has always been execution capacity, not strategy.
 
-**Why #2:** Pure upside. Dead leads have zero opportunity cost. Runs while Marcus sleeps. Pays for itself in week one. Ships only after #1 because reactivated leads need a fast quote pipe to land in.
+**Why #2:** Pure upside. Dead leads have zero opportunity cost. Runs while Marcus sleeps. Pays for itself in week one. **Ships only after #1** — reactivated leads need a fast quote pipe to land in.
 
 ---
 
@@ -50,9 +52,9 @@
 - Escalates stuck deals to Jenna with the **specific blocker named**, not a generic "follow up."
 - Predicts crew start dates from milestone state for accurate Jobber scheduling.
 
-**What it replaces:** Jenna's manual chase of HOA / permit / deposit status across 8–12 active projects at any given time.
+**What it replaces:** Jenna's manual chase across 8–12 active post-sign projects. Marcus on the impact: *"If a project slips 2 weeks because of HOA, that is 2 weeks my crew could be on another job. It compounds."*
 
-**ROI:** 8–12 projects in limbo × $28K = **$224–336K of capital tied up at any moment**. Compressing average post-sign cycle from 4–6 weeks to 2–3 weeks unlocks earlier crew utilization and accelerates cash collection by **weeks per project**.
+**ROI:** **8–12 projects in limbo × $28K = $224–336K of capital tied up at any given moment.** Compressing average post-sign cycle from 4–6 weeks to 2–3 weeks unlocks earlier crew utilization and accelerates cash collection by **weeks per project**. At 150 projects/yr, even 1 week of average compression is meaningful crew-utilization recapture.
 
 **Why #3:** Operationally invisible to Marcus but the silent constraint on revenue *velocity*. Also frees Jenna's attention so #4 actually works.
 
@@ -68,9 +70,9 @@
 - Auto-approves clear-rule cases (refunds under threshold for known delay reasons); escalates only edge cases.
 - Surfaces rule conflicts and proposes codification for Marcus to ratify.
 
-**What it replaces:** 5–10 daily Slack pings from Jenna to Marcus — explicitly one of Marcus's three *"tasks I'd fire myself from."*
+**What it replaces:** 5–10 daily Slack pings from Jenna to Marcus. Jenna's exact ask on the call: *"I literally just need a rule book. Half of these I could decide myself if I knew Marcus's framework."* Marcus's response: *"I keep saying I will write it down. I never do."*
 
-**ROI:** ~25–40 hours/month of Marcus's attention recovered. Hard to dollarize directly, but it directly enables Marcus's stated outcome: *"I want my evenings back."* More importantly, it removes the human rate-limit on agents #1–#3 — without it, every quote, every reactivation, every milestone escalation eventually queues behind Marcus's Slack inbox.
+**ROI:** ~25–40 hours/month of Marcus's attention recovered. Hard to dollarize directly, but it directly enables Marcus's own stated outcome: *"Honestly, I am tired. I want my evenings back."* More importantly, it removes the human rate-limit on agents #1–#3 — without it, every quote, every reactivation, every milestone escalation eventually queues behind Marcus's Slack inbox.
 
 **Why #4 (not #1):** It can't be built first because there's no decision history yet to learn from. Building it fourth lets the earlier agents *generate* the training data it needs.
 
@@ -86,9 +88,9 @@
 - Detects customer responses; flags concerns to crew lead and Jenna; surfaces positive sentiment as referral candidates.
 - Tracks NPS-style signal across active builds so Marcus sees customer mood at a glance.
 
-**What it replaces:** Marcus's inconsistent Loom updates (he sends them on ~30% of jobs) and the customer anxiety calls Jenna fields daily.
+**What it replaces:** Marcus's inconsistent Loom updates — he sends them on ~30% of jobs. Plus Jenna's daily "what is happening on my project?" anxiety calls.
 
-**ROI:** Drives referrals — Marcus's own words: *"I have gotten referrals from people who said you are the only contractor who kept us informed."* One extra referred deal/month at $28K = **~$336K/yr**. Plus reduces inbound anxiety calls and lifts review-request conversion at project end.
+**ROI:** Drives referrals by Marcus's own admission: *"I have gotten referrals from people who said 'you are the only contractor who kept us informed.'"* One extra referred deal/month at $28K = **~$336K/yr**. Plus reduces inbound anxiety calls and lifts review-request conversion at project end.
 
 **Why #5:** Real revenue signal from Marcus's own admission, but it sits downstream of the four agents above. The customer experience needs to match a now-faster business — build it once the bigger leaks are plugged.
 
@@ -96,24 +98,29 @@
 
 ## Why my #1 isn't Marcus's stated #1 (it is — but for the wrong reason)
 
-Marcus also ranks Quote Speed first. He frames it as personal pain: *"it's killing us."* That framing leads to the wrong next move: hire a junior estimator, work later nights, throw bodies at it.
+Marcus's onboarding submission ranks "speed up quoting" first. He frames it as personal pain: *"it's killing us."* That framing leads to the wrong remedy: hire a junior estimator, work later nights, throw bodies at it.
 
-The right framing is the math: **35–40% of qualified leads lost to speed differential is the single largest revenue leak in a $4.2M business.** Even if Marcus had ranked this #3, the numbers would demand it be #1. Reaching that conclusion from data, not deference to the founder's gut, is the job. An agent built around "Marcus is tired" optimizes for Marcus's evenings; an agent built around the speed-loss math optimizes for $1.1M in won deals — and gives Marcus his evenings back as a side effect.
+The right framing is the math: **35–40% of qualified leads lost to speed differential is the single largest revenue leak in a $4.2M business.** Even if Marcus had ranked this #3, the numbers would demand it be #1. Reaching that conclusion from the data — not deference to the founder's gut — is the whole job. An agent built around "Marcus is tired" optimizes for Marcus's evenings; an agent built around the speed-loss math optimizes for $1.1M in won deals — and gives Marcus his evenings back as a side effect.
 
 ## One agent I considered but cut: Marketing/Content (Marcus's stated #4)
 
-Cut deliberately. On the call Marcus said directly: *"I cannot keep up with the leads I have."* When pushed on lead-volume vs. quote-volume constraint, he answered *"quote."* His Meta ROAS sits at 4–4.5×.
+Cut deliberately. The discovery transcript is unambiguous:
 
-He is **not lead-constrained**. He is **throughput-constrained on the quote side**. A content agent would solve a non-problem and *actively worsen* the existing bottleneck — stuffing more leads into a funnel that loses 35–40% of qualified deals on speed. The brief explicitly rewards "pushing back on the founder's stated priorities with evidence." This is that.
+> **L&S:** Are you lead-volume constrained, or quote-volume constrained?
+> **Marcus:** Quote. I cannot keep up with the leads I have.
 
-(Runner-up cut: a Crew Coaching agent — real $104K/yr opportunity, but an order of magnitude smaller than #1–#3, and the kind of pick that signals the priority list was set by founder enthusiasm rather than data.)
+His Meta ROAS is 4–4.5×. The L&S auditor flagged this directly: *"He himself just admitted lead volume is not the problem. A marketing and content agent would be solving a non-problem. **Strong candidate flag.**"*
+
+Building a content agent for Greenscape would actively worsen the existing bottleneck — stuffing more leads into a funnel that already loses 35–40% of qualified deals on speed. The brief explicitly rewards "pushing back on the founder's stated priorities with evidence." This is that.
+
+(Runner-up cut: **Crew Coaching** — Marcus's stated #3, real $104K/yr opportunity, but the auditor's verbatim flag: *"Real money, but an order of magnitude smaller than the quote-cycle revenue at risk. **Likely a candidate trap if the priority list is not reasoned from data.**"* Honored the trap.)
 
 ---
 
 ## Assumptions, dependencies, and what would break first at scale
 
-- **GHL is the system of record.** Every agent reads from and writes back to GHL. Jenna's constraint is non-negotiable: anything outside GHL won't get used. The P0 build mocks the GHL email send (real-customer-risk avoidance during demo); production routes through GHL's email API.
+- **GHL is the system of record.** Jenna's hard constraint, exact words: *"And whatever it is, it has to talk to GHL. Everything has to be in GHL or it is not going to get used."* The P0 build mocks the GHL email send to avoid real-customer risk during the demo; production routes through GHL's email API. Future agents (#2 reactivation SMS, #3 milestone nudges, #5 build updates) all push back to GHL contacts.
 - **#1 unblocks the funnel; #3 unblocks the backlog.** Running #1 without #3 just shifts the bottleneck downstream as more deals close faster than ops can absorb. They ship in sequence, deploy close together.
 - **#4 is the force multiplier.** Without it, Marcus remains the rate limiter on agents #1–#3 because every edge-case approval still routes through him.
 - **Voice cloning is out of scope for v1.** "Marcus's voice" in agents #2 and #5 means tone and phrasing, not synthesized audio. ElevenLabs / HeyGen is a v2 conversation once trust is established.
-- **First-to-break at scale (built P0):** single shared Slack approval channel doesn't scale past one approver; pricing match degrades past ~500 SKUs without embeddings; no concurrency control on simultaneous reviews of the same proposal. All documented in the README.
+- **What breaks first at scale (in the built P0):** single shared Slack approval channel doesn't scale past one approver; pricing match degrades past ~500 SKUs without embeddings; no concurrency control on simultaneous reviews of the same proposal. All documented in the README.
