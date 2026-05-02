@@ -160,7 +160,7 @@ export async function runProposalDrafting(proposalId: string): Promise<DraftedPr
   try {
     const { value, meta } = await extractStructured({
       system: DRAFT_SYSTEM,
-      user: buildDraftUserMessage(scope, matched),
+      user: buildDraftUserMessage(proposal, scope, matched),
       schema: DraftResultSchema,
       maxTokens: 8192,
     });
@@ -228,10 +228,17 @@ export async function runProposalDrafting(proposalId: string): Promise<DraftedPr
 }
 
 function buildDraftUserMessage(
+  proposal: ProposalRow,
   scope: ExtractedScopeT,
   matched: { per_feature: FeatureCandidates[]; global: ScoredPricingCandidate[] }
 ): string {
   const lines: string[] = [];
+  lines.push("=== Customer Record (canonical — use these exact values in the proposal header) ===");
+  lines.push(`Customer name: ${proposal.customer_name}`);
+  lines.push(`Project address: ${proposal.project_address}`);
+  if (proposal.customer_email) lines.push(`Email: ${proposal.customer_email}`);
+  if (proposal.customer_phone) lines.push(`Phone: ${proposal.customer_phone}`);
+  lines.push("");
   lines.push("=== Extracted Scope ===");
   lines.push(JSON.stringify(scope, null, 2));
   lines.push("");

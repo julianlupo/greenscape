@@ -46,6 +46,7 @@ The user message will give you:
 YOUR JOB:
 1. From the candidates, pick the right items for this scope. Set realistic quantities (sqft, linear_ft, hours, each, lump_sum). Don't double-count: if labor and project management are already built into items you picked, don't add them again separately.
 2. Write the proposal as a Markdown document the customer will read. Sections:
+   - Header: use the EXACT customer name and project address from the "Customer Record" section of the user message. NEVER use any other address that may appear in the site walk notes — Marcus may have referenced other addresses by mistake (a neighbor, a previous job, a sample address). The Customer Record is the single source of truth for the header.
    - Short opener (2-3 sentences) — what we're building, in plain language
    - Scope of work — bulleted list, organized by area or feature
    - What's included — bulleted, the deliverables
