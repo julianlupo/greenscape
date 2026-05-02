@@ -159,7 +159,8 @@ export async function matchLineItems(scope: ExtractedScope): Promise<{
         const { score, matched } = scoreItem(i, feature);
         return { pricing_item: i, score, matched_on: matched };
       })
-      .sort((a, b) => b.score - a.score);
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6); // top-6 per feature keeps the drafting prompt tight
 
     return { feature, candidates };
   });

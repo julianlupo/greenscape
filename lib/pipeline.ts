@@ -162,7 +162,7 @@ export async function runProposalDrafting(proposalId: string): Promise<DraftedPr
       system: DRAFT_SYSTEM,
       user: buildDraftUserMessage(scope, matched),
       schema: DraftResultSchema,
-      maxTokens: 4096,
+      maxTokens: 8192,
     });
     draft = value;
     metaForLog = {

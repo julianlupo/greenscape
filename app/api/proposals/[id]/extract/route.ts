@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { runScopeExtraction, PipelineError } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 /**
  * POST /api/proposals/[id]/extract

@@ -4,7 +4,11 @@ import { postSlackApprovalPing } from "@/lib/slack";
 import { logEvent } from "@/lib/events";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// Drafting can take 60–120s on a complex scope (Sonnet 4.6 generating 4k+
+// output tokens). 300s is the Vercel Pro ceiling; on Hobby the cap is 60s
+// and this endpoint may need to be refactored to async/polling — flagged
+// in the README under "What would break first at scale."
+export const maxDuration = 300;
 
 /**
  * POST /api/proposals/[id]/draft
