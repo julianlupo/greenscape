@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,18 @@ type LoadState =
 
 export default function ReviewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const shouldRegenerate = searchParams.get("regenerate") === "1";
+
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [editedQuantities, setEditedQuantities] = useState<Record<string, number>>({});
   const [editedMarkdown, setEditedMarkdown] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState<{
+    stage: "starting" | "running" | "done" | "error";
+    message?: string;
+  } | null>(null);
 
   const fetchProposal = useCallback(async () => {
     setState({ kind: "loading" });
@@ -42,6 +49,69 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     fetchProposal();
   }, [fetchProposal]);
+
+  // Auto-trigger regenerate when arriving with ?regenerate=1 (from Slack reject flow)
+  useEffect(() => {
+    if (!shouldRegenerate || regenerating) return;
+    let cancelled = false;
+    (async () => {
+      setRegenerating({ stage: "starting" });
+      try {
+        setRegenerating({ stage: "running" });
+        const res = await fetch(`/api/proposals/${params.id}/regenerate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "web" }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json?.error ?? "Regenerate failed");
+        if (cancelled) return;
+        setRegenerating({ stage: "done" });
+        // Strip ?regenerate=1 so a refresh doesn't re-trigger
+        router.replace(`/review/${params.id}`);
+        await fetchProposal();
+      } catch (err) {
+        if (cancelled) return;
+        setRegenerating({
+          stage: "error",
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldRegenerate, regenerating, params.id, router, fetchProposal]);
+
+  if (regenerating && regenerating.stage !== "done") {
+    return (
+      <CenterMessage>
+        {regenerating.stage === "error" ? (
+          <div className="rounded-md border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-800 max-w-lg">
+            <p className="font-semibold mb-1">Regenerate failed</p>
+            <p className="mb-3">{regenerating.message}</p>
+            <Link
+              href={`/review/${params.id}`}
+              className="text-emerald-700 hover:underline"
+              onClick={() => setRegenerating(null)}
+            >
+              Back to review →
+            </Link>
+          </div>
+        ) : (
+          <div className="text-center">
+            <p className="text-3xl mb-4">🔄</p>
+            <p className="text-lg font-semibold text-zinc-900">Re-analyzing with Claude</p>
+            <p className="mt-2 text-sm text-zinc-500 max-w-sm mx-auto">
+              Re-extracting scope and re-drafting the proposal. This takes ~90 seconds.
+              We&apos;ll post a fresh approval ping in Slack and reload this page when it&apos;s done.
+            </p>
+            <p className="mt-4 text-xs text-zinc-400">Don&apos;t close this tab.</p>
+          </div>
+        )}
+      </CenterMessage>
+    );
+  }
 
   if (state.kind === "loading") {
     return <CenterMessage>Loading…</CenterMessage>;

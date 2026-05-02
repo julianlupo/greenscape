@@ -319,8 +319,9 @@ function buildClosedBlocks(
     outcome === "approved" && proposal.stripe_payment_link
       ? `\n*Deposit link:* ${proposal.stripe_payment_link}`
       : "";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
-  return [
+  const blocks: SlackBlock[] = [
     {
       type: "header",
       text: { type: "plain_text", text: `${emoji} ${verb} — ${proposal.customer_name}`, emoji: true },
@@ -341,16 +342,51 @@ function buildClosedBlocks(
         },
       ],
     },
-    {
+  ];
+
+  if (outcome === "rejected") {
+    blocks.push({ type: "divider" });
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: "*What's next?*" },
+    });
+    blocks.push({
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          action_id: "regenerate_open",
+          text: { type: "plain_text", text: "🔄 Re-analyze with Claude", emoji: true },
+          style: "primary",
+          url: `${appUrl}/review/${proposal.id}?regenerate=1`,
+        },
+        {
+          type: "button",
+          action_id: "edit_on_web",
+          text: { type: "plain_text", text: "✏️ Edit on web", emoji: true },
+          url: `${appUrl}/review/${proposal.id}`,
+        },
+        {
+          type: "button",
+          action_id: "leave_rejected",
+          text: { type: "plain_text", text: "Leave rejected", emoji: true },
+          url: `${appUrl}/proposals/${proposal.id}`,
+        },
+      ],
+    });
+  } else {
+    blocks.push({
       type: "actions",
       elements: [
         {
           type: "button",
           action_id: "view_in_browser",
           text: { type: "plain_text", text: "Open in browser", emoji: true },
-          url: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/proposals/${proposal.id}`,
+          url: `${appUrl}/proposals/${proposal.id}`,
         },
       ],
-    },
-  ];
+    });
+  }
+
+  return blocks;
 }

@@ -8,7 +8,12 @@ import { supabase } from "./supabase";
 import { logEvent } from "./events";
 import { createDepositPaymentLink } from "./stripe";
 import { sendProposalEmail } from "./send";
-import { loadProposal, PipelineError } from "./pipeline";
+import {
+  loadProposal,
+  PipelineError,
+  runProposalDrafting,
+  runScopeExtraction,
+} from "./pipeline";
 import type { ProposalRow } from "./types";
 
 export interface ApprovalResult {
@@ -82,6 +87,60 @@ export async function rejectProposal(
     .eq("id", proposalId);
   if (error) throw new PipelineError(error.message);
   await logEvent(proposalId, "rejected", { reason, rejected_at: rejectedAt, ...actor });
+
+  return loadProposal(proposalId);
+}
+
+/**
+ * Regenerate a previously-rejected (or stuck-in-draft) proposal — wipes the
+ * extraction + draft and re-runs both Claude calls. Lands on
+ * `pending_approval` with a fresh proposal_markdown + line items.
+ */
+export async function regenerateProposal(
+  proposalId: string,
+  reason: string = "",
+  actor: { source: "web" | "slack"; user?: string } = { source: "web" }
+): Promise<ProposalRow> {
+  const sb = supabase();
+  const proposal = await loadProposal(proposalId);
+  if (!["rejected", "draft", "pending_approval", "error"].includes(proposal.status)) {
+    throw new PipelineError(
+      `Cannot regenerate from status '${proposal.status}'`,
+      409
+    );
+  }
+
+  // Reset to draft so the existing pipeline state guards pass. Wipe outputs
+  // so a stale partial result doesn't poison the new run.
+  const { error: resetErr } = await sb
+    .from("proposals")
+    .update({
+      status: "draft",
+      extracted_scope: null,
+      line_items: null,
+      subtotal_cents: 0,
+      total_cents: 0,
+      proposal_markdown: null,
+      requires_render: false,
+      rejected_at: null,
+      // keep slack_message_ts + slack_channel_id so we can update the same
+      // thread, and keep stripe_payment_link cleared (a new approve generates
+      // a fresh deposit link on top of the new total).
+      stripe_payment_link: null,
+    })
+    .eq("id", proposalId);
+  if (resetErr) throw new PipelineError(resetErr.message);
+
+  await logEvent(proposalId, "drafted", {
+    stage: "regenerate.reset",
+    reason,
+    ...actor,
+  });
+
+  // Re-run both Claude calls. The drafting step transitions status to
+  // pending_approval on success.
+  await runScopeExtraction(proposalId);
+  await runProposalDrafting(proposalId);
 
   return loadProposal(proposalId);
 }
