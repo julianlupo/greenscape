@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCents, formatDate } from "@/lib/utils";
-import type { ProposalEventRow, ProposalRow, SelectedLineItem } from "@/lib/types";
+import type { ProposalEventRow, ProposalRow } from "@/lib/types";
 
 type LoadState =
   | { kind: "loading" }
