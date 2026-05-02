@@ -81,6 +81,9 @@ export async function sendProposalEmail(proposal: ProposalRow): Promise<void> {
   const html = renderHtmlEmail({
     customerName,
     proposalHtml: await marked.parse(proposalMd, { gfm: true, breaks: false }),
+    lineItems: proposal.line_items ?? [],
+    subtotalCents: proposal.subtotal_cents,
+    totalCents: proposal.total_cents,
     total,
     deposit,
     paymentLink: proposal.stripe_payment_link ?? null,
@@ -128,6 +131,17 @@ export async function sendProposalEmail(proposal: ProposalRow): Promise<void> {
 function renderHtmlEmail(args: {
   customerName: string;
   proposalHtml: string;
+  lineItems: ReadonlyArray<{
+    name: string;
+    category: string;
+    unit: string;
+    unit_price_cents: number;
+    quantity: number;
+    line_total_cents: number;
+    notes: string;
+  }>;
+  subtotalCents: number;
+  totalCents: number;
   total: string;
   deposit: string;
   paymentLink: string | null;
@@ -138,6 +152,48 @@ function renderHtmlEmail(args: {
          🎬 <strong>Demo mode:</strong> ${escapeHtml(args.demoBanner)}
        </div>`
     : "";
+
+  const lineItemsTable =
+    args.lineItems.length === 0
+      ? ""
+      : `
+      <h3 style="margin-top: 32px; margin-bottom: 12px; font-size: 16px; color: #18181b;">Itemized line items</h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background-color: #fafafa; text-align: left;">
+            <th style="padding: 10px 8px; border-bottom: 1px solid #e4e4e7; font-weight: 600; color: #52525b;">Item</th>
+            <th style="padding: 10px 8px; border-bottom: 1px solid #e4e4e7; font-weight: 600; color: #52525b; text-align: right;">Qty</th>
+            <th style="padding: 10px 8px; border-bottom: 1px solid #e4e4e7; font-weight: 600; color: #52525b;">Unit</th>
+            <th style="padding: 10px 8px; border-bottom: 1px solid #e4e4e7; font-weight: 600; color: #52525b; text-align: right;">Unit price</th>
+            <th style="padding: 10px 8px; border-bottom: 1px solid #e4e4e7; font-weight: 600; color: #52525b; text-align: right;">Line total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${args.lineItems
+            .map(
+              (li) => `
+            <tr>
+              <td style="padding: 10px 8px; border-bottom: 1px solid #f4f4f5;">
+                <div style="color: #18181b; font-weight: 500;">${escapeHtml(li.name)}</div>
+                ${li.notes ? `<div style="color: #71717a; font-size: 12px; margin-top: 2px; font-style: italic;">${escapeHtml(li.notes)}</div>` : ""}
+              </td>
+              <td style="padding: 10px 8px; border-bottom: 1px solid #f4f4f5; text-align: right; color: #18181b; font-variant-numeric: tabular-nums;">${formatQty(li.quantity)}</td>
+              <td style="padding: 10px 8px; border-bottom: 1px solid #f4f4f5; color: #71717a; font-size: 12px;">${escapeHtml(li.unit)}</td>
+              <td style="padding: 10px 8px; border-bottom: 1px solid #f4f4f5; text-align: right; color: #52525b; font-variant-numeric: tabular-nums;">${escapeHtml(formatCents(li.unit_price_cents))}</td>
+              <td style="padding: 10px 8px; border-bottom: 1px solid #f4f4f5; text-align: right; color: #18181b; font-weight: 500; font-variant-numeric: tabular-nums;">${escapeHtml(formatCents(li.line_total_cents))}</td>
+            </tr>`
+            )
+            .join("")}
+          <tr>
+            <td colspan="4" style="padding: 14px 8px 6px; text-align: right; font-weight: 600; color: #18181b;">Subtotal</td>
+            <td style="padding: 14px 8px 6px; text-align: right; font-weight: 600; color: #18181b; font-variant-numeric: tabular-nums;">${escapeHtml(formatCents(args.subtotalCents))}</td>
+          </tr>
+          <tr>
+            <td colspan="4" style="padding: 6px 8px; text-align: right; font-weight: 700; color: #18181b; font-size: 14px;">Total</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 700; color: #047857; font-size: 16px; font-variant-numeric: tabular-nums;">${escapeHtml(formatCents(args.totalCents))}</td>
+          </tr>
+        </tbody>
+      </table>`;
   // Inline-styled HTML email — minimal CSS to avoid email-client weirdness.
   const cta = args.paymentLink
     ? `
@@ -166,6 +222,7 @@ function renderHtmlEmail(args: {
       <p>Thanks for having us out. Your proposal is below — let me know if anything looks off.</p>
       <hr style="border: 0; border-top: 1px solid #e4e4e7; margin: 24px 0;" />
       <div style="font-size: 15px;">${args.proposalHtml}</div>
+      ${lineItemsTable}
       <hr style="border: 0; border-top: 1px solid #e4e4e7; margin: 24px 0;" />
       ${cta}
       <p style="margin-bottom: 0; color: #52525b;">— Marcus<br/>Greenscape Pro<br/>Phoenix, AZ</p>
@@ -175,6 +232,10 @@ function renderHtmlEmail(args: {
     </p>
   </body>
 </html>`;
+}
+
+function formatQty(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
 }
 
 function escapeHtml(s: string): string {
