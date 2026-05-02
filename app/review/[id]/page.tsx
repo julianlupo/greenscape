@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCents, formatDate } from "@/lib/utils";
+import { computeProposalCost, formatCostCents } from "@/lib/cost";
 import type { ProposalEventRow, ProposalRow } from "@/lib/types";
 
 type LoadState =
@@ -362,6 +363,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         {/* Sidebar */}
         <aside className="space-y-6">
           <ScopePanel proposal={proposal} />
+          <CostPanel events={events} />
           <InternalNotesPanel proposal={proposal} />
           <EventsPanel events={events} />
         </aside>
@@ -458,6 +460,47 @@ function InternalNotesPanel({ proposal }: { proposal: ProposalRow }) {
         <pre className="whitespace-pre-wrap text-xs text-zinc-700 leading-relaxed font-sans">
           {proposal.site_walk_notes}
         </pre>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CostPanel({ events }: { events: ProposalEventRow[] }) {
+  const cost = computeProposalCost(events);
+  if (cost.tokens_in === 0 && cost.tokens_out === 0) return null;
+
+  const stageLabel: Record<string, string> = {
+    extracted: "Scope extraction",
+    drafted: "Proposal drafting",
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Run cost</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-xs">
+        <div className="flex items-baseline justify-between border-b border-zinc-100 pb-2">
+          <span className="text-zinc-500 uppercase tracking-wide">Total this proposal</span>
+          <span className="text-lg font-semibold tabular-nums text-emerald-700">
+            {formatCostCents(cost.cents)}
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          {cost.per_event.map((e, i) => (
+            <div key={i} className="flex items-baseline justify-between gap-2">
+              <span className="text-zinc-700">{stageLabel[e.event_type] ?? e.event_type}</span>
+              <span className="text-zinc-500 tabular-nums">
+                {e.tokens_in.toLocaleString()} in · {e.tokens_out.toLocaleString()} out
+                {e.attempts > 1 ? <span className="text-amber-600"> · {e.attempts}× retried</span> : null}
+              </span>
+              <span className="text-zinc-900 tabular-nums w-16 text-right">{formatCostCents(e.cents)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-zinc-100 pt-2 text-zinc-500">
+          Sonnet 4.6 · $3 / $15 per Mtok in/out
+        </div>
       </CardContent>
     </Card>
   );

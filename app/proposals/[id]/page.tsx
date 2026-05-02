@@ -5,18 +5,24 @@ import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCents, formatDate } from "@/lib/utils";
-import type { ProposalRow, ProposalStatus } from "@/lib/types";
+import { computeProposalCost, formatCostCents } from "@/lib/cost";
+import type { ProposalEventRow, ProposalRow, ProposalStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProposalReadOnlyPage({ params }: { params: { id: string } }) {
-  const { data, error } = await supabase()
-    .from("proposals")
-    .select("*")
-    .eq("id", params.id)
-    .single();
-  if (error || !data) notFound();
-  const proposal = data as ProposalRow;
+  const sb = supabase();
+  const [{ data: pData, error }, { data: eData }] = await Promise.all([
+    sb.from("proposals").select("*").eq("id", params.id).single(),
+    sb
+      .from("proposal_events")
+      .select("id, event_type, payload, created_at")
+      .eq("proposal_id", params.id),
+  ]);
+  if (error || !pData) notFound();
+  const proposal = pData as ProposalRow;
+  const events = (eData ?? []) as ProposalEventRow[];
+  const cost = computeProposalCost(events);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
@@ -41,7 +47,7 @@ export default async function ProposalReadOnlyPage({ params }: { params: { id: s
         </div>
       </header>
 
-      <div className="mb-6 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Created" value={formatDate(proposal.created_at)} />
         <Stat label="Approved" value={proposal.approved_at ? formatDate(proposal.approved_at) : "—"} />
         <Stat label="Sent" value={proposal.sent_at ? formatDate(proposal.sent_at) : "—"} />
@@ -57,6 +63,18 @@ export default async function ProposalReadOnlyPage({ params }: { params: { id: s
               >
                 Open ↗
               </Link>
+            ) : (
+              "—"
+            )
+          }
+        />
+        <Stat
+          label="LLM cost"
+          value={
+            cost.cents > 0 ? (
+              <span title={`${cost.tokens_in.toLocaleString()} in / ${cost.tokens_out.toLocaleString()} out tok · Sonnet 4.6`}>
+                {formatCostCents(cost.cents)}
+              </span>
             ) : (
               "—"
             )
